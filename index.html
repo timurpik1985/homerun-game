@@ -314,6 +314,21 @@ function swTab(t) {
   tabs[2].classList.toggle('active', t==='hits');
   renderLB();
 }
+function autoUpdateScore() {
+  if (!db || !myDocId || !myName) return;
+  db.collection('scores').doc(myDocId).get().then(function(doc) {
+    var prev = doc.exists ? doc.data() : {};
+    return db.collection('scores').doc(myDocId).set({
+      name: myName,
+      dist: Math.max(best, prev.dist||0),
+      total: Math.max(totalRange, prev.total||0),
+      hits: Math.max(hits, prev.hits||0),
+      ts: Date.now()
+    });
+  }).then(function() {
+    loadScores();
+  }).catch(function(e){ console.log('autoUpdate err',e); });
+}
 function saveScore() {
   var n = document.getElementById('pname').value.trim();
   if (!n || !pendingScore) return;
@@ -1487,6 +1502,7 @@ function finishBall(b){
     document.getElementById('dfly').textContent='';
     var msg2=finalM>350?'MONSTER! '+finalM+'m!!':finalM>250?'HOME RUN! '+finalM+'m!':finalM>180?'Great hit! '+finalM+'m':finalM>120?'Nice hit! '+finalM+'m':'Hit! '+finalM+'m';
     document.getElementById('msg').textContent=msg2;
+    autoUpdateScore();
     btnOn();checkAch();showRankToast();
     if(totalRange>=bonusNextAt)setTimeout(function(){startBonus();},700);
     phase='done';
@@ -1520,12 +1536,9 @@ function update(){
     }
     if(b.flying){
       if(b.bt.zz)b.flyVy+=Math.sin(b.t*0.22+b.zp)*0.38;
-      b.wx+=b.flyVx;b.wy+=b.flyVy;b.flyVy+=0.20;b.flyVx*=0.995;b.spin+=0.25;
+      b.wx+=b.flyVx;b.wy+=b.flyVy;b.flyVy+=0.13;b.flyVx=Math.max(b.flyVx*0.9998,2);b.spin+=0.25;
       b.trail.push({wx:b.wx,wy:b.wy});if(b.trail.length>100)b.trail.shift();
       if(b.wy<peakY)peakY=b.wy;
-      // CLAMP: camera keeps ball on screen, but also cap world distance
-      var maxDist = HOME_X + PPM * 540;
-      if(b.wx > maxDist){ b.wx = maxDist; b.flyVx = 0; }
       if(b.wy>=gr&&b.flyVy>0)finishBall(b);
     }
     if(b.bt.ghost&&!b.hit)b.gA=Math.max(0,0.35+0.35*Math.sin(ghostT*2.5+b.t*0.1));
