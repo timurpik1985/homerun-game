@@ -39,7 +39,7 @@ body{height:100%;height:-webkit-fill-available;background:#030814;font-family:Ar
 #dfly{position:absolute;top:36px;left:0;right:0;text-align:center;font-size:28px;font-weight:900;color:#fbbf24;pointer-events:none;text-shadow:0 2px 16px rgba(0,0,0,0.95);z-index:5;}
 #badge{position:absolute;top:10px;right:10px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;pointer-events:none;white-space:nowrap;z-index:5;display:none;}
 #hint{position:absolute;top:68px;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center;font-size:11px;font-weight:700;color:#38bdf8;background:rgba(3,8,20,0.75);padding:3px 12px;border-radius:12px;pointer-events:none;opacity:0;transition:opacity 0.4s;z-index:8;}
-#ranktoast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:auto;z-index:10;opacity:0;transition:opacity 0.3s;cursor:pointer;}
+#ranktoast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s;cursor:pointer;}
 #ranktoast-inner{background:rgba(5,10,30,0.96);border:2px solid #7c3aed;border-radius:18px;padding:10px 20px;}
 #ranktoast-title{font-size:22px;font-weight:900;color:#fbbf24;}
 #ranktoast-sub{font-size:11px;color:#c084fc;margin-top:2px;letter-spacing:1px;}
@@ -1174,7 +1174,7 @@ function getAvail(){
   if(diamondReady) r.push(BALLS[8]);
   return r;
 }
-function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=function(){document.getElementById('ranktoast').style.opacity='0';clearTimeout(rankToastTimer);if(document.getElementById('modalbg').classList.contains('open')){closeLB();}else{doPitch();}};}
+function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=function(){var t=document.getElementById('ranktoast');t.style.opacity='0';t.style.pointerEvents='none';clearTimeout(rankToastTimer);if(document.getElementById('modalbg').classList.contains('open')){closeLB();}else{doPitch();}};}
 function btnOff(){var pb=document.getElementById('pbtn');pb.className='off';pb.onclick=null;}
 function showLbl(t){var p=document.getElementById('plbl');p.textContent=t;p.style.opacity='1';setTimeout(function(){p.style.opacity='0';},2200);}
 var rankToastTimer=0;
@@ -1199,8 +1199,12 @@ function showRankToast() {
     title.style.color=bestRank<=3?'#fbbf24':'#c084fc';
   }
   toast.style.opacity='1';
+  toast.style.pointerEvents='auto';
   clearTimeout(rankToastTimer);
-  rankToastTimer=setTimeout(function(){toast.style.opacity='0';},3000);
+  rankToastTimer=setTimeout(function(){
+    toast.style.opacity='0';
+    toast.style.pointerEvents='none';
+  },3000);
 }
 
 function showHint(t,c){var h=document.getElementById('hint');h.textContent=t;h.style.color=c||'#7dd3fc';h.style.opacity='1';setTimeout(function(){h.style.opacity='0';},1500);}
