@@ -2083,18 +2083,35 @@ function drawScene(){
 
 var lastFrameTime = 0, frameAccum = 0;
 var FRAME_MS = 1000 / 60;
+var fpsCalibrated = false, fpsFrames = 0, fpsSamples = [];
+var physicsScale = 1.0;
+
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastFrameTime) { lastFrameTime = ts; return; }
   var delta = Math.min(ts - lastFrameTime, 50);
   lastFrameTime = ts;
+
+  // Calibrate FPS over first 30 frames
+  if (!fpsCalibrated) {
+    fpsSamples.push(delta);
+    if (fpsSamples.length >= 30) {
+      var avg = 0;
+      for (var i = 0; i < fpsSamples.length; i++) avg += fpsSamples[i];
+      avg /= fpsSamples.length;
+      // If avg frame time < 12ms, we're on 120Hz - scale physics to half
+      physicsScale = avg < 12 ? 0.5 : 1.0;
+      fpsCalibrated = true;
+    }
+    drawScene();
+    return;
+  }
+
   frameAccum += delta;
-  var didUpdate = false;
-  if (frameAccum >= FRAME_MS) {
+  if (frameAccum >= FRAME_MS * physicsScale) {
     update();
-    frameAccum -= FRAME_MS;
-    if (frameAccum >= FRAME_MS) frameAccum = 0;
-    didUpdate = true;
+    frameAccum -= FRAME_MS * physicsScale;
+    if (frameAccum > FRAME_MS) frameAccum = 0;
   }
   drawScene();
 }
