@@ -1107,29 +1107,22 @@ function spawnRing(meters){
   else { tier=meters<120?0:meters<250?1:meters<450?2:3; }
   var t=RING_TIERS[tier];
   makeRingBonus(t);
-  // Fixed screen-pixel speed per frame, converted to world units at current zoom
-  // This gives consistent visual speed regardless of camera zoom/ball speed
-  var baseScrSpd=(3+tier*0.6+Math.random()*1.5)*0.5;
-  if(t.bad) baseScrSpd*=1.5;
-  var gr=GR();
-  var wx,wy,wvx,wvy;
+  // Pure screen-space: fixed pixel velocity, independent of camera/ball speed
+  var spd=(3+tier*0.6+Math.random()*1.5)*0.5;
+  if(t.bad) spd*=1.5;
+  var sx,sy,svx,svy;
   if(t.bad){
     var edge=Math.floor(Math.random()*4);
-    var sx,sy,svx,svy;
-    if(edge===0){sx=W()+t.r+10;sy=60+Math.random()*(H()*0.55);svx=-baseScrSpd;svy=(Math.random()-0.5)*0.3;}
-    else if(edge===1){sx=-t.r-10;sy=60+Math.random()*(H()*0.55);svx=baseScrSpd;svy=(Math.random()-0.5)*0.3;}
-    else if(edge===2){sx=W()*0.2+Math.random()*W()*0.6;sy=-t.r-10;svx=(Math.random()-0.5)*0.3;svy=baseScrSpd;}
-    else{sx=W()*0.2+Math.random()*W()*0.6;sy=H()*0.8+t.r+10;svx=(Math.random()-0.5)*0.3;svy=-baseScrSpd;}
-    wx=(sx-W()/2)/camScale+camX; wy=(sy-H()/2)/camScale+camY;
-    // Store as screen-space velocities, apply per frame without camScale
-    wvx=svx; wvy=svy;
+    if(edge===0){sx=W()+t.r+10;sy=60+Math.random()*(H()*0.55);svx=-spd;svy=(Math.random()-0.5)*0.3;}
+    else if(edge===1){sx=-t.r-10;sy=60+Math.random()*(H()*0.55);svx=spd;svy=(Math.random()-0.5)*0.3;}
+    else if(edge===2){sx=W()*0.2+Math.random()*W()*0.6;sy=-t.r-10;svx=(Math.random()-0.5)*0.3;svy=spd;}
+    else{sx=W()*0.2+Math.random()*W()*0.6;sy=H()*0.8+t.r+10;svx=(Math.random()-0.5)*0.3;svy=-spd;}
   } else {
-    var sx=W()+t.r+10, sy=60+Math.random()*(H()*0.55);
-    wx=(sx-W()/2)/camScale+camX; wy=(sy-H()/2)/camScale+camY;
-    wvx=-baseScrSpd; wvy=(Math.random()-0.5)*0.3;
+    sx=W()+t.r+10; sy=60+Math.random()*(H()*0.55);
+    svx=-spd; svy=(Math.random()-0.5)*0.3;
   }
   rings.push({
-    wx:wx, wy:wy, wvx:wvx, wvy:wvy,
+    sx:sx, sy:sy, svx:svx, svy:svy,
     r:t.r, tier:tier, bad:t.bad,
     col:t.col, glow:t.glow, bonus:t.bonus, label:t.label,
     pulse:Math.random()*Math.PI*2,
@@ -1326,15 +1319,15 @@ function checkRingSliceFromPts(swipePts){
       var ax2=seg[pi-1].x,ay2=seg[pi-1].y,bx2=seg[pi].x,by2=seg[pi].y;
       var ldx=bx2-ax2,ldy=by2-ay2,llen=Math.sqrt(ldx*ldx+ldy*ldy);
       if(llen<1) continue;
-      var rgsx=(rg.wx-camX)*camScale+W()/2, rgsy=(rg.wy-camY)*camScale+H()/2;
+      var rgsx=rg.sx, rgsy=rg.sy;
       var t2=((rgsx-ax2)*ldx+(rgsy-ay2)*ldy)/(llen*llen);
       t2=Math.max(0,Math.min(1,t2));
       var clx=ax2+t2*ldx,cly=ay2+t2*ldy;
       var dist=Math.sqrt((rgsx-clx)*(rgsx-clx)+(rgsy-cly)*(rgsy-cly));
       if(dist<rg.r*camScale+28){
         rg.hit=true; rg.hitAnim=0; rg.sliced=true;
-        var rwx=rg.wx;
-        var rwy=rg.wy;
+        var rwx=(rg.sx-W()/2)/camScale+camX;
+        var rwy=(rg.sy-H()/2)/camScale+camY;
         if(rg.bad){
           // Sliced danger ring = BLOCKED, zero penalty, just green sparks
           rg.explode=true; rg.explodeAnim=0;
@@ -1585,51 +1578,39 @@ function update(){
         if(rg.explodeAnim>1){rings.splice(i,1);continue;}
       } else if(!rg.hit){
         rg.pulse+=0.09;
+        // Move in pure screen space - constant pixel speed regardless of camera
+        rg.sx+=rg.svx; rg.sy+=rg.svy;
         if(rg.bad && anyFly2){
-          // MAGNET: home toward ball in world space
-          rg.wx+=rg.wvx/camScale; rg.wy+=rg.wvy/camScale;
-          // Home toward ball in screen space
+          // MAGNET: home toward ball in screen space
           var bs2=w2s(anyFly2.wx,anyFly2.wy);
-          var rsx2=(rg.wx-camX)*camScale+W()/2, rsy2=(rg.wy-camY)*camScale+H()/2;
-          var mdx=bs2.x-rsx2, mdy=bs2.y-rsy2;
+          var mdx=bs2.x-rg.sx, mdy=bs2.y-rg.sy;
           var md=Math.sqrt(mdx*mdx+mdy*mdy);
-          var maxScrSpd=7.5;
           if(md>1){
-            rg.wvx+=(mdx/md)*0.4;
-            rg.wvy+=(mdy/md)*0.4;
-            var spd=Math.sqrt(rg.wvx*rg.wvx+rg.wvy*rg.wvy);
-            if(spd>maxScrSpd){rg.wvx=rg.wvx/spd*maxScrSpd;rg.wvy=rg.wvy/spd*maxScrSpd;}
+            rg.svx+=(mdx/md)*0.4;
+            rg.svy+=(mdy/md)*0.4;
+            var sp2=Math.sqrt(rg.svx*rg.svx+rg.svy*rg.svy);
+            if(sp2>7.5){rg.svx=rg.svx/sp2*7.5;rg.svy=rg.svy/sp2*7.5;}
           }
-          // Danger ring touches ball = penalty (compare in screen space)
           if(md<rg.r+18){
             rg.explode=true;rg.explodeAnim=0;
             if(!rg.sliced){ringDistBonus+=rg.bonus;}
-            emit(rg.wx,rg.wy,'#ef4444',60);
-            emit(rg.wx,rg.wy,'#fbbf24',40);
-            emit(rg.wx,rg.wy,'#ff6600',30);
-            emit(rg.wx,rg.wy,'#ffffff',20);
-            if(!rg.sliced) addFT(rg.wx,rg.wy-30,rg.bonus+'m!','#ef4444',24);
+            var ex2=(rg.sx-W()/2)/camScale+camX, ey2=(rg.sy-H()/2)/camScale+camY;
+            emit(ex2,ey2,'#ef4444',60);emit(ex2,ey2,'#fbbf24',40);
+            emit(ex2,ey2,'#ff6600',30);emit(ex2,ey2,'#ffffff',20);
+            if(!rg.sliced) addFT(ex2,ey2-30,rg.bonus+'m!','#ef4444',24);
           }
-        } else {
-          rg.wx+=rg.wvx/camScale; rg.wy+=rg.wvy/camScale;
         }
-        // Ring exits screen boundary check (convert to screen)
-        var rsx=(rg.wx-camX)*camScale+W()/2;
-        var rsy=(rg.wy-camY)*camScale+H()/2;
-        var offscreen = rsx < -rg.r-5 || rsx > W()+rg.r+5 || rsy < -rg.r-5 || rsy > H()+rg.r+5;
+        // Off screen
+        var offscreen = rg.sx < -rg.r-5 || rg.sx > W()+rg.r+5 || rg.sy < -rg.r-5 || rg.sy > H()+rg.r+5;
         if(offscreen){
           rg.explode=true; rg.explodeAnim=0;
-          rg.wx=camX+(60+Math.random()*80-W()/2)/camScale;
-          rg.wy=camY+Math.max(60,Math.min(H()*0.7,rsy)-H()/2)/camScale;
-          var ewx=rg.wx;
-          var ewy=rg.wy;
+          var ex=60+Math.random()*80, ey=Math.max(60,Math.min(H()*0.7,rg.sy));
+          var ewx=(ex-W()/2)/camScale+camX, ewy=(ey-H()/2)/camScale+camY;
           if(rg.bad&&!rg.sliced){
-            // Unsliced danger ring = penalty
             emit(ewx,ewy,'#ef4444',28);
             ringDistBonus+=rg.bonus;
             addFT(ewx,ewy-30,rg.bonus+'m','#ef4444',18);
           } else if(!rg.bad){
-            // Missed positive ring = silent poof, no penalty
             emit(ewx,ewy,rg.glow,15);
           }
         }
@@ -1644,7 +1625,6 @@ function update(){
   computeCam();
   if(windFx){windFx.life-=0.045;if(windFx.life<=0)windFx=null;}
   if(!camFrozen){camX+=(tCamX-camX)*0.18;camY+=(tCamY-camY)*0.18;camScale+=(tScale-camScale)*0.12;}
-  // Rings now in world space - no screen compensation needed
   // Animate swipe hint - small fast arc
   var sh = document.getElementById('swipehint');
   if (phase==='incoming' && balls.length > 0) {
@@ -1851,8 +1831,8 @@ function drawScene(){
       var rPulse=0.7+0.3*Math.sin(rg.pulse);
       ctx.save();
       ctx.globalAlpha=rAlpha;
-      var rsx2=(rg.wx-camX)*camScale+W()/2;
-      var rsy2=(rg.wy-camY)*camScale+H()/2;
+      var rsx2=rg.sx;
+      var rsy2=rg.sy;
       ctx.translate(rsx2,rsy2);
       ctx.scale(rScale,rScale);
       if(rg.explode){
