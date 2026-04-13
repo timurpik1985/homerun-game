@@ -1111,7 +1111,7 @@ function spawnRing(meters){
   }
   var t=RING_TIERS[tier];
   makeRingBonus(t);
-  var baseSpd=6+tier*1.2+Math.random()*3.75;
+  var baseSpd=(6+tier*1.2+Math.random()*3.75)*0.5;
   if(t.bad) baseSpd*=1.5;
   var rx, ry, rvx, rvy;
   if(t.bad){
@@ -1192,7 +1192,7 @@ function getAvail(){
   if(diamondReady) r.push(BALLS[8]);
   return r;
 }
-function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=function(){if(document.getElementById('modalbg').classList.contains('open')){closeLB();}else{doPitch();}};}
+function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=function(){document.getElementById('ranktoast').style.opacity='0';clearTimeout(rankToastTimer);if(document.getElementById('modalbg').classList.contains('open')){closeLB();}else{doPitch();}};}
 function btnOff(){var pb=document.getElementById('pbtn');pb.className='off';pb.onclick=null;}
 function showLbl(t){var p=document.getElementById('plbl');p.textContent=t;p.style.opacity='1';setTimeout(function(){p.style.opacity='0';},2200);}
 var rankToastTimer=0;
