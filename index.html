@@ -115,7 +115,6 @@ body{height:100%;height:-webkit-fill-available;background:#030814;font-family:Ar
     <div class="stat"><span class="slabel">BEST</span><span class="sval" id="sbest">0 m</span></div>
     <div class="stat"><span class="slabel">TOTAL</span><span class="sval" id="stotal">0 m</span></div>
     <div class="stat"><span class="slabel">HITS</span><span class="sval" id="shits">0</span></div>
-    <div class="stat"><span class="slabel">SCORE</span><span class="sval" id="sscore">0</span></div>
     <button id="lbbtn" onclick="openLB()">&#127942;</button>
   </div>
   <div id="gamearea">
@@ -1516,20 +1515,21 @@ function computeCam(){
   var dist=Math.max(1,lead.wx-HOME_X);
   tScale=Math.max(0.45,Math.min(1.0, 800/dist));
 }
-function update(){
-  var gr=GR();ghostT+=0.06;arrowT+=0.04;waveT+=0.02;
-  if(bonusActive)for(var i=0;i<balls.length;i++){if(!balls[i].bLaunch){balls[i].bDel--;if(balls[i].bDel<=0)balls[i].bLaunch=true;}}
+function update(dt){
+  if(dt===undefined)dt=1;
+  var gr=GR();ghostT+=0.06*dt;arrowT+=0.04*dt;waveT+=0.02*dt;
+  if(bonusActive)for(var i=0;i<balls.length;i++){if(!balls[i].bLaunch){balls[i].bDel-=dt;if(balls[i].bDel<=0)balls[i].bLaunch=true;}}
   for(var i=0;i<balls.length;i++){
-    var b=balls[i];if(!b.bLaunch)continue;b.t++;
+    var b=balls[i];if(!b.bLaunch)continue;b.t+=dt;
     if(!b.hit&&(phase==='incoming'||phase==='flying')){
-      if(b.bt.zz){b.vx+=Math.sin(b.t*0.2+b.zp)*0.4;b.vy+=Math.cos(b.t*0.15)*0.12;}
-      b.wx+=b.vx;b.wy+=b.vy;b.spin-=0.14;
+      if(b.bt.zz){b.vx+=Math.sin(b.t*0.2+b.zp)*0.4*dt;b.vy+=Math.cos(b.t*0.15)*0.12*dt;}
+      b.wx+=b.vx*dt;b.wy+=b.vy*dt;b.spin-=0.14*dt;
       b.trail.push({wx:b.wx,wy:b.wy});if(b.trail.length>20)b.trail.shift();
       var s2=w2s(b.wx,b.wy);if(s2.x<-40&&!b.hit){b.hit=true;b.flying=false;}
     }
     if(b.flying){
-      if(b.bt.zz)b.flyVy+=Math.sin(b.t*0.22+b.zp)*0.38;
-      b.wx+=b.flyVx;b.wy+=b.flyVy;b.flyVy+=0.13;b.flyVx=Math.max(b.flyVx*0.9998,2);b.spin+=0.25;
+      if(b.bt.zz)b.flyVy+=Math.sin(b.t*0.22+b.zp)*0.38*dt;
+      b.wx+=b.flyVx*dt;b.wy+=b.flyVy*dt;b.flyVy+=0.13*dt;b.flyVx=Math.max(b.flyVx*(1-0.0002*dt),2);b.spin+=0.25*dt;
       b.trail.push({wx:b.wx,wy:b.wy});if(b.trail.length>100)b.trail.shift();
       if(b.wy<peakY)peakY=b.wy;
       if(b.wy>=gr&&b.flyVy>0)finishBall(b);
@@ -1561,7 +1561,7 @@ function update(){
   if(phase==='flying'||bonusActive){
     var anyFly2=null;for(var i=0;i<balls.length;i++)if(balls[i].flying){anyFly2=balls[i];break;}
     var curM2=anyFly2?calcM(anyFly2.wx):0;
-    ringSpawnT--;
+    ringSpawnT-=dt;
     var spawnInt=Math.max(28,80-curM2*0.1);
     if(ringSpawnT<=0&&anyFly2){
       ringSpawnT=spawnInt+Math.floor(Math.random()*40);
@@ -1574,20 +1574,20 @@ function update(){
       rg.pulse+=0.09;
       if(rg.explode){
         // Exploding animation
-        rg.explodeAnim+=0.06;
+        rg.explodeAnim+=0.06*dt;
         if(rg.explodeAnim>1){rings.splice(i,1);continue;}
       } else if(!rg.hit){
-        rg.pulse+=0.09;
+        rg.pulse+=0.09*dt;
         // Move in pure screen space - constant pixel speed regardless of camera
-        rg.sx+=rg.svx; rg.sy+=rg.svy;
+        rg.sx+=rg.svx*dt; rg.sy+=rg.svy*dt;
         if(rg.bad && anyFly2){
           // MAGNET: home toward ball in screen space
           var bs2=w2s(anyFly2.wx,anyFly2.wy);
           var mdx=bs2.x-rg.sx, mdy=bs2.y-rg.sy;
           var md=Math.sqrt(mdx*mdx+mdy*mdy);
           if(md>1){
-            rg.svx+=(mdx/md)*0.4;
-            rg.svy+=(mdy/md)*0.4;
+            rg.svx+=(mdx/md)*0.4*dt;
+            rg.svy+=(mdy/md)*0.4*dt;
             var sp2=Math.sqrt(rg.svx*rg.svx+rg.svy*rg.svy);
             if(sp2>7.5){rg.svx=rg.svx/sp2*7.5;rg.svy=rg.svy/sp2*7.5;}
           }
@@ -1615,7 +1615,7 @@ function update(){
           }
         }
       } else {
-        rg.hitAnim+=0.07;
+        rg.hitAnim+=0.07*dt;
         if(rg.hitAnim>1){rings.splice(i,1);continue;}
       }
     }
@@ -1623,8 +1623,8 @@ function update(){
     rings=[];
   }
   computeCam();
-  if(windFx){windFx.life-=0.045;if(windFx.life<=0)windFx=null;}
-  if(!camFrozen){camX+=(tCamX-camX)*0.18;camY+=(tCamY-camY)*0.18;camScale+=(tScale-camScale)*0.12;}
+  if(windFx){windFx.life-=0.045*dt;if(windFx.life<=0)windFx=null;}
+  if(!camFrozen){camX+=(tCamX-camX)*0.18*dt;camY+=(tCamY-camY)*0.18*dt;camScale+=(tScale-camScale)*0.12*dt;}
   // Animate swipe hint - small fast arc
   var sh = document.getElementById('swipehint');
   if (phase==='incoming' && balls.length > 0) {
@@ -1683,7 +1683,7 @@ function update(){
     sh.style.opacity = '0';
     swipeHintT = 0;
   }
-  particles=particles.filter(function(p){p.wx+=p.vx;p.wy+=p.vy;p.vy+=0.16;p.vx*=0.97;p.life-=p.dec;p.r*=0.97;return p.life>0&&p.r>0.4;});
+  particles=particles.filter(function(p){p.wx+=p.vx*dt;p.wy+=p.vy*dt;p.vy+=0.16*dt;p.vx*=Math.pow(0.97,dt);p.life-=p.dec*dt;p.r*=Math.pow(0.97,dt);return p.life>0&&p.r>0.4;});
   floatTexts=floatTexts.filter(function(t){t.wy-=1.1;t.life-=0.013;return t.life>0;});
   windTexts=windTexts.filter(function(t){t.wy+=t.vy;t.life-=0.015;return t.life>0;});
 }
@@ -2056,38 +2056,16 @@ function drawScene(){
   }
 }
 
-var lastFrameTime = 0, frameAccum = 0;
-var FRAME_MS = 1000 / 60;
-var fpsCalibrated = false, fpsFrames = 0, fpsSamples = [];
-var physicsScale = 1.0;
+var lastFrameTime = 0;
 
 function loop(ts) {
   requestAnimationFrame(loop);
-  if (!lastFrameTime) { lastFrameTime = ts; return; }
+  if (!lastFrameTime) { lastFrameTime = ts; drawScene(); return; }
   var delta = Math.min(ts - lastFrameTime, 50);
   lastFrameTime = ts;
-
-  // Calibrate FPS over first 30 frames
-  if (!fpsCalibrated) {
-    fpsSamples.push(delta);
-    if (fpsSamples.length >= 30) {
-      var avg = 0;
-      for (var i = 0; i < fpsSamples.length; i++) avg += fpsSamples[i];
-      avg /= fpsSamples.length;
-      // If avg frame time < 12ms, we're on 120Hz - scale physics to half
-      physicsScale = avg < 12 ? 0.5 : 1.0;
-      fpsCalibrated = true;
-    }
-    drawScene();
-    return;
-  }
-
-  frameAccum += delta;
-  if (frameAccum >= FRAME_MS * physicsScale) {
-    update();
-    frameAccum -= FRAME_MS * physicsScale;
-    if (frameAccum > FRAME_MS) frameAccum = 0;
-  }
+  // dt = 1.0 at 60fps, 0.5 at 120fps, 2.0 at 30fps
+  var dt = delta / (1000 / 60);
+  update(dt);
   drawScene();
 }
 window.addEventListener('load', function() {
