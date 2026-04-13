@@ -1106,7 +1106,7 @@ function spawnRing(meters){
   else { tier=meters<120?0:meters<250?1:meters<450?2:3; }
   var t=RING_TIERS[tier];
   makeRingBonus(t);
-  // Pure screen-space: fixed pixel velocity, independent of camera/ball speed
+  // Speed in pixels per frame at 60fps - dt scaling handles all refresh rates
   var spd=(3+tier*0.6+Math.random()*1.5)*0.5;
   if(t.bad) spd*=1.5;
   var sx,sy,svx,svy;
