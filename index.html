@@ -170,7 +170,7 @@ body{height:100%;height:-webkit-fill-available;background:#030814;font-family:Ar
       </div>
       <div class="tabs"><div class="tab active" onclick="swTab('best')">Best Hit</div><div class="tab" onclick="swTab('total')">Total</div><div class="tab" onclick="swTab('hits')">Most Hits</div></div>
       <div id="lbscroll"><div id="lblist"></div></div>
-      <button id="backbtn" onclick="closeLBAndPitch()">Back to Game</button>
+      <button id="backbtn" onclick="closeLB()">Back to Game</button>
     </div>
   </div>
   <div id="btm">
@@ -1192,7 +1192,7 @@ function getAvail(){
   if(diamondReady) r.push(BALLS[8]);
   return r;
 }
-function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=doPitch;}
+function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<br>BALL';pb.className='';pb.onclick=function(){if(document.getElementById('modalbg').classList.contains('open')){closeLB();}else{doPitch();}};}
 function btnOff(){var pb=document.getElementById('pbtn');pb.className='off';pb.onclick=null;}
 function showLbl(t){var p=document.getElementById('plbl');p.textContent=t;p.style.opacity='1';setTimeout(function(){p.style.opacity='0';},2200);}
 var rankToastTimer=0;
