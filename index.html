@@ -1651,7 +1651,17 @@ function update(){
   }
   computeCam();
   if(windFx){windFx.life-=0.045;if(windFx.life<=0)windFx=null;}
+  var prevCamX=camX, prevCamY=camY, prevCamScale=camScale;
   if(!camFrozen){camX+=(tCamX-camX)*0.18;camY+=(tCamY-camY)*0.18;camScale+=(tScale-camScale)*0.12;}
+  // Compensate ring screen positions for camera pan so rings move at constant speed
+  if(!camFrozen){
+    var dcx=(camX-prevCamX)*camScale;
+    var dcy=(camY-prevCamY)*camScale;
+    for(var ri=0;ri<rings.length;ri++){
+      rings[ri].x-=dcx;
+      rings[ri].y-=dcy;
+    }
+  }
   // Animate swipe hint - small fast arc
   var sh = document.getElementById('swipehint');
   if (phase==='incoming' && balls.length > 0) {
