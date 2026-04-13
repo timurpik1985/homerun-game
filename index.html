@@ -304,8 +304,8 @@ function updateUnlockBars() {
     }
   }
 }
-function openLB() { document.getElementById('modalbg').classList.add('open'); loadScores(); updateChips(); }
-function closeLB() { document.getElementById('modalbg').classList.remove('open'); }
+function openLB() { document.getElementById('modalbg').classList.add('open'); document.getElementById('pbtn').style.visibility='hidden'; loadScores(); updateChips(); }
+function closeLB() { document.getElementById('modalbg').classList.remove('open'); document.getElementById('pbtn').style.visibility='visible'; }
 function closeLBAndPitch() { closeLB(); if(typeof doPitch==='function') doPitch(); }
 function swTab(t) {
   curTab = t;
