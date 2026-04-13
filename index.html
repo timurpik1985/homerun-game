@@ -1339,9 +1339,6 @@ function checkRingSliceFromPts(swipePts){
           ringDistBonus+=rg.bonus;
           emit(rwx,rwy,rg.glow,30);
           addWT(fb[0].wx,fb[0].wy-55,rg.bonus);
-          score+=rg.bonus*combo;
-          if(score<0)score=0;
-          document.getElementById('sscore').textContent=score;
         }
         break;
       }
@@ -1399,9 +1396,6 @@ function tryHit(){
     var hitQuality=Math.min(1, sp/90);
     lastHitQuality=hitQuality;
     combo++;
-    var hitPts=hitQuality>0.85?100:hitQuality>0.6?50:20;
-    score+=hitPts*combo;
-    document.getElementById('sscore').textContent=score;
     b.hit=true;b.flying=true;
     b.perfectHit=(hitQuality>0.85);
     var launchPow=Math.max(pow, 5);
