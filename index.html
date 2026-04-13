@@ -1396,6 +1396,7 @@ function tryHit(){
     var hitQuality=Math.min(1, sp/90);
     lastHitQuality=hitQuality;
     combo++;
+    var hitPts=hitQuality>0.85?100:hitQuality>0.6?50:20;
     b.hit=true;b.flying=true;
     b.perfectHit=(hitQuality>0.85);
     var launchPow=Math.max(pow, 5);
