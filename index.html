@@ -2081,7 +2081,15 @@ function drawScene(){
   }
 }
 
-function loop(){ update(); drawScene(); requestAnimationFrame(loop); }
+var lastFrameTime = 0;
+function loop(ts) {
+  var delta = lastFrameTime ? Math.min(ts - lastFrameTime, 50) : 16.67;
+  lastFrameTime = ts;
+  var steps = Math.round(delta / 16.67);
+  for (var si = 0; si < steps; si++) { update(); }
+  drawScene();
+  requestAnimationFrame(loop);
+}
 window.addEventListener('load', function() {
   document.body.offsetHeight;
   sizeCanvas();
