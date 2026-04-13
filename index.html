@@ -170,7 +170,10 @@ body{height:100%;height:-webkit-fill-available;background:#030814;font-family:Ar
       </div>
       <div class="tabs"><div class="tab active" onclick="swTab('best')">Best Hit</div><div class="tab" onclick="swTab('total')">Total</div><div class="tab" onclick="swTab('hits')">Most Hits</div></div>
       <div id="lbscroll"><div id="lblist"></div></div>
-      <button id="backbtn" onclick="closeLB()">Back to Game</button>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button id="backbtn" onclick="closeLB()" style="flex:1">Back</button>
+        <button onclick="closeLBAndPitch()" style="flex:1;padding:10px;border-radius:10px;background:#2563eb;border:none;color:#fff;font-size:13px;font-weight:700;">PITCH BALL</button>
+      </div>
     </div>
   </div>
   <div id="btm">
@@ -306,6 +309,7 @@ function updateUnlockBars() {
 }
 function openLB() { document.getElementById('modalbg').classList.add('open'); loadScores(); updateChips(); }
 function closeLB() { document.getElementById('modalbg').classList.remove('open'); }
+function closeLBAndPitch() { closeLB(); if(typeof doPitch==='function') doPitch(); }
 function swTab(t) {
   curTab = t;
   var tabs = document.querySelectorAll('.tab');
@@ -1195,17 +1199,25 @@ function btnOn(l){var pb=document.getElementById('pbtn');pb.innerHTML=l||'PITCH<
 function btnOff(){var pb=document.getElementById('pbtn');pb.className='off';pb.onclick=null;}
 function showLbl(t){var p=document.getElementById('plbl');p.textContent=t;p.style.opacity='1';setTimeout(function(){p.style.opacity='0';},2200);}
 var rankToastTimer=0;
-function showRankToast(dist) {
+function showRankToast() {
   var toast=document.getElementById('ranktoast');
   var title=document.getElementById('ranktoast-title');
   if (!myName) {
     title.textContent='Save your score!';
     title.style.color='#fbbf24';
   } else {
-    var rankB=getMyRank('best'), rankT=getMyRank('total'), rankH=getMyRank('hits');
-    var best2=Math.min(rankB,rankT,rankH);
-    title.textContent='You are #'+best2+' in World!';
-    title.style.color=best2<=3?'#fbbf24':'#c084fc';
+    // Calculate rank by comparing current stats against loaded scores
+    var rankB=1, rankT=1, rankH=1;
+    for (var i=0; i<scores.length; i++) {
+      var s=scores[i];
+      if (s.id===myDocId) continue; // skip own entry
+      if ((s.dist||0) > best) rankB++;
+      if ((s.total||0) > totalRange) rankT++;
+      if ((s.hits||0) > hits) rankH++;
+    }
+    var bestRank=Math.min(rankB,rankT,rankH);
+    title.textContent='You are #'+bestRank+' in World!';
+    title.style.color=bestRank<=3?'#fbbf24':'#c084fc';
   }
   toast.style.opacity='1';
   clearTimeout(rankToastTimer);
