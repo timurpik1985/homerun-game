@@ -2083,23 +2083,19 @@ function drawScene(){
 
 var lastFrameTime = 0, frameAccum = 0;
 var FRAME_MS = 1000 / 60;
-var _skipFrame = false;
 function loop(ts) {
   requestAnimationFrame(loop);
   if (!lastFrameTime) { lastFrameTime = ts; return; }
-  var delta = ts - lastFrameTime;
+  var delta = Math.min(ts - lastFrameTime, 50);
   lastFrameTime = ts;
-  // On 120Hz delta ~8ms, on 60Hz ~16ms
-  // Accumulate and only update when we have a full 60fps frame worth
   frameAccum += delta;
-  if (frameAccum < FRAME_MS * 0.75) {
-    // Not enough time passed - skip physics this frame, just draw
-    drawScene();
-    return;
+  var didUpdate = false;
+  if (frameAccum >= FRAME_MS) {
+    update();
+    frameAccum -= FRAME_MS;
+    if (frameAccum >= FRAME_MS) frameAccum = 0;
+    didUpdate = true;
   }
-  frameAccum -= FRAME_MS;
-  if (frameAccum > FRAME_MS) frameAccum = 0; // don't let it pile up
-  update();
   drawScene();
 }
 window.addEventListener('load', function() {
