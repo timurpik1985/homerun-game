@@ -2081,12 +2081,17 @@ function drawScene(){
   }
 }
 
-var lastFrameTime = 0;
+var lastFrameTime = 0, frameAccum = 0;
+var FRAME_MS = 1000 / 60;
 function loop(ts) {
-  var delta = lastFrameTime ? Math.min(ts - lastFrameTime, 50) : 16.67;
+  if (!lastFrameTime) lastFrameTime = ts;
+  var delta = Math.min(ts - lastFrameTime, 50);
   lastFrameTime = ts;
-  var steps = Math.round(delta / 16.67);
-  for (var si = 0; si < steps; si++) { update(); }
+  frameAccum += delta;
+  while (frameAccum >= FRAME_MS) {
+    update();
+    frameAccum -= FRAME_MS;
+  }
   drawScene();
   requestAnimationFrame(loop);
 }
